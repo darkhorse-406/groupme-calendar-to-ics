@@ -24,13 +24,14 @@ with app.app_context():
 @app.route('/')
 def index():
     try:
+        print("Starting index route")  # Debug print
         last_cache = getattr(current_app, 'last_cache', datetime.datetime(year=2000, month=1, day=1))
         cache_duration = int(os.environ.get('CACHE_DURATION', 60))
 
         groupme_group_id = os.environ.get('GROUPME_GROUP_ID', None)
         if not groupme_group_id:
             app.logger.error("GROUPME_GROUP_ID is not set.")
-            return 'ERROR: The GROUPME_GROUP_ID is not set.', 500
+            return 'ERROR: The GROUPME_GROUP_ID is not set.', 500'
 
         if datetime.datetime.now() - last_cache > datetime.timedelta(minutes=cache_duration) or cache_duration == 0:
             app.logger.info('Cache miss.')
@@ -39,12 +40,12 @@ def index():
             groupme_api_key = os.environ.get('GROUPME_API_KEY', None)
             if not groupme_api_key:
                 app.logger.error("GROUPME_API_KEY is not set.")
-                return 'ERROR: The GROUPME_API_KEY is not set.', 500
+                return 'ERROR: The GROUPME_API_KEY is not set., 500'
 
             successfully_load_json = utils.load_groupme_json(app=app, groupme_api_key=groupme_api_key, groupme_group_id=groupme_group_id)
             if not successfully_load_json:
                 app.logger.error("Failed to load GroupMe JSON.")
-                return 'There was a critical error loading the GroupMe Calendar. Please investigate.', 500
+                return 'There was a critical error loading the GroupMe Calendar. Please investigate., 500'
             current_app.ics_cache = utils.groupme_json_to_ics(groupme_json=current_app.groupme_calendar_json_cache)
             current_app.last_cache = datetime.datetime.now()
         else:
@@ -78,6 +79,7 @@ def index():
 @app.route('/calendar.ics')
 def full_ics():
     try:
+        print("Starting full_ics route")  # Debug print
         last_cache = getattr(current_app, 'last_cache', datetime.datetime(year=2000, month=1, day=1))
         cache_duration = int(os.environ.get('CACHE_DURATION', 60))
         if datetime.datetime.now() - last_cache > datetime.timedelta(minutes=cache_duration) or cache_duration == 0:
@@ -88,4 +90,36 @@ def full_ics():
             groupme_group_id = os.environ.get('GROUPME_GROUP_ID', None)
             if not groupme_api_key:
                 app.logger.error("GROUPME_API_KEY is not set.")
-                return utils.return_ics_Response(util
+                return utils.return_ics_Response(utils.groupme_ics_error(error_text='GROUPME_API_KEY not set'))
+            if not groupme_group_id:
+                app.logger.error("GROUPME_GROUP_ID is not set.")
+                return utils.return_ics_Response(utils.groupme_ics_error(error_text='GROUPME_GROUP_ID not set'))
+
+            successfully_load_json = utils.load_groupme_json(app=app, groupme_api_key=groupme_api_key, groupme_group_id=groupme_group_id)
+            if not successfully_load_json:
+                app.logger.error("Failed to load GroupMe JSON.")
+                return utils.return_ics_Response(utils.groupme_ics_error(error_text='Failed to load GroupMe JSON'))
+            current_app.ics_cache = utils.groupme_json_to_ics(groupme_json=current_app.groupme_calendar_json_cache)
+            current_app.last_cache = datetime.datetime.now()
+        else:
+            app.logger.info('Cache hit. Time remaining: {}'.format(datetime.timedelta(minutes=cache_duration) - (datetime.datetime.now() - last_cache)))
+
+        ics_data = getattr(current_app, 'ics_cache', None)
+        if not ics_data:
+            app.logger.error("ICS cache is empty.")
+            return utils.return_ics_Response(utils.groupme_ics_error(error_text='ICS cache is empty'))
+        return utils.return_ics_Response(ics_data)
+    except Exception as e:
+        app.logger.error(f"Error in full_ics route: {str(e)}")
+        return utils.return_ics_Response(utils.groupme_ics_error(error_text=f'Internal Server Error: {str(e)}'))
+
+@app.route('/recent.ics')
+def recent_ics():
+    return 'Soon!'
+
+@app.route('/robots.txt')
+def robots():
+    return 'User-agent: *\nDisallow: /'
+
+if __name__ == "__main__":
+    app.run(debug=True)
