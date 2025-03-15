@@ -1,4 +1,4 @@
-from ics import Calendar, Event
+from ics import Calendar, Event, Container, ContentLine
 from flask import Response
 import dateutil.parser
 import requests
@@ -56,13 +56,13 @@ def load_groupme_json(app, groupme_api_key, groupme_group_id):
 
 def groupme_json_to_ics(groupme_json, static_name=None):
     cal = Calendar()
-    # Use extra to add custom iCalendar properties
-    cal.extra.append("PRODID:-//Andrew Mussey//GroupMe-to-ICS 0.1//EN")
-    cal.extra.append("VERSION:2.0")
-    cal.extra.append("CALSCALE:GREGORIAN")
-    cal.extra.append("METHOD:PUBLISH")
-    cal.extra.append(f"X-WR-CALNAME:GroupMe: {current_app.groupme_calendar_name}")
-    cal.extra.append(f"X-WR-TIMEZONE:{current_app.calendar_timezone}")
+    # Use ContentLine to add custom iCalendar properties
+    cal.extra.append(ContentLine(name="PRODID", value="-//Andrew Mussey//GroupMe-to-ICS 0.1//EN"))
+    cal.extra.append(ContentLine(name="VERSION", value="2.0"))
+    cal.extra.append(ContentLine(name="CALSCALE", value="GREGORIAN"))
+    cal.extra.append(ContentLine(name="METHOD", value="PUBLISH"))
+    cal.extra.append(ContentLine(name="X-WR-CALNAME", value=f"GroupMe: {current_app.groupme_calendar_name}"))
+    cal.extra.append(ContentLine(name="X-WR-TIMEZONE", value=current_app.calendar_timezone))
 
     for json_blob in groupme_json['response']['events']:
         if 'deleted_at' not in json_blob:
@@ -108,12 +108,12 @@ def groupme_json_to_ics(groupme_json, static_name=None):
 
 def groupme_ics_error(error_text, static_name=None):
     cal = Calendar()
-    # Use extra to add custom iCalendar properties
-    cal.extra.append("PRODID:-//Andrew Mussey//GroupMe-to-ICS 0.1//EN")
-    cal.extra.append("VERSION:2.0")
-    cal.extra.append("CALSCALE:GREGORIAN")
-    cal.extra.append("METHOD:PUBLISH")
-    cal.extra.append(f"X-WR-CALNAME:GroupMe: {current_app.groupme_calendar_name} ({error_text})")
-    cal.extra.append("X-WR-TIMEZONE:America/Chicago")
+    # Use ContentLine to add custom iCalendar properties
+    cal.extra.append(ContentLine(name="PRODID", value="-//Andrew Mussey//GroupMe-to-ICS 0.1//EN"))
+    cal.extra.append(ContentLine(name="VERSION", value="2.0"))
+    cal.extra.append(ContentLine(name="CALSCALE", value="GREGORIAN"))
+    cal.extra.append(ContentLine(name="METHOD", value="PUBLISH"))
+    cal.extra.append(ContentLine(name="X-WR-CALNAME", value=f"GroupMe: {current_app.groupme_calendar_name} ({error_text})"))
+    cal.extra.append(ContentLine(name="X-WR-TIMEZONE", value="America/Chicago"))
 
     return cal.serialize()
