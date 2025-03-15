@@ -1,7 +1,7 @@
 print("Starting to load utils.py")  # Debug print
 
 try:
-    from ics import Calendar, Event, ContentLine
+    from icalendar import Calendar, Event
     from flask import Response
     import dateutil.parser
     import requests
@@ -67,65 +67,63 @@ def load_groupme_json(app, groupme_api_key, groupme_group_id):
 def groupme_json_to_ics(groupme_json, static_name=None):
     print("Starting groupme_json_to_ics")  # Debug print
     cal = Calendar()
-    # Use ContentLine to add custom iCalendar properties
-    cal.extra.append(ContentLine(name="PRODID", value="-//Andrew Mussey//GroupMe-to-ICS 0.1//EN"))
-    cal.extra.append(ContentLine(name="VERSION", value="2.0"))
-    cal.extra.append(ContentLine(name="CALSCALE", value="GREGORIAN"))
-    cal.extra.append(ContentLine(name="METHOD", value="PUBLISH"))
-    cal.extra.append(ContentLine(name="X-WR-CALNAME", value=f"GroupMe: {current_app.groupme_calendar_name}"))
-    cal.extra.append(ContentLine(name="X-WR-TIMEZONE", value=current_app.calendar_timezone))
+    # Use dictionary-style assignment for iCalendar properties
+    cal['PRODID'] = '-//Andrew Mussey//GroupMe-to-ICS 0.1//EN'
+    cal['VERSION'] = '2.0'
+    cal['CALSCALE'] = 'GREGORIAN'
+    cal['METHOD'] = 'PUBLISH'
+    cal['X-WR-CALNAME'] = f"GroupMe: {current_app.groupme_calendar_name}"
+    cal['X-WR-TIMEZONE'] = current_app.calendar_timezone
 
     for json_blob in groupme_json['response']['events']:
         if 'deleted_at' not in json_blob:
             event = Event()
-            event.uid = json_blob['event_id']
-            event.begin = dateutil.parser.parse(json_blob['start_at'])
+            event['UID'] = json_blob['event_id']
+            event['DTSTART'] = dateutil.parser.parse(json_blob['start_at'])
             if json_blob.get('end_at'):
-                event.end = dateutil.parser.parse(json_blob['end_at'])
-            event.name = json_blob['name']
-            event.description = json_blob.get('description', '')
+                event['DTEND'] = dateutil.parser.parse(json_blob['end_at'])
+            event['SUMMARY'] = json_blob['name']
+            event['DESCRIPTION'] = json_blob.get('description', '')
             if json_blob.get('location'):
                 location = json_blob.get('location', {})
 
                 if json_blob.get('description'):
-                    event.description += '\n\n'
-                event.description += 'Location:\n'
+                    event['DESCRIPTION'] = event['DESCRIPTION'] + '\n\n'
+                event['DESCRIPTION'] = event['DESCRIPTION'] + 'Location:\n'
 
                 if location.get('name') and location.get('address'):
-                    event.location = "{}, {}".format(location.get('name'), location.get('address').strip().replace("\n", ", "))
-                    event.description += location.get('name')
-                    event.description += '\n'
-                    event.description += location.get('address')
+                    event['LOCATION'] = "{}, {}".format(location.get('name'), location.get('address').strip().replace("\n", ", "))
+                    event['DESCRIPTION'] = event['DESCRIPTION'] + location.get('name') + '\n' + location.get('address')
                 elif location.get('name'):
-                    event.location = location.get('name')
-                    event.description += location.get('name')
+                    event['LOCATION'] = location.get('name')
+                    event['DESCRIPTION'] = event['DESCRIPTION'] + location.get('name')
                 elif location.get('address'):
-                    event.location = location.get('address').strip().replace("\n", ", ")
-                    event.description += location.get('address')
+                    event['LOCATION'] = location.get('address').strip().replace("\n", ", ")
+                    event['DESCRIPTION'] = event['DESCRIPTION'] + location.get('address')
 
                 if location.get('lat') and location.get('lng'):
                     location_url = 'https://www.google.com/maps?q={},{}'.format(location.get('lat'), location.get('lng'))
-                    if not event.location:
-                        event.location = location_url
+                    if 'LOCATION' not in event:
+                        event['LOCATION'] = location_url
                     else:
-                        event.description += '\n'
-                    event.description += location_url
+                        event['DESCRIPTION'] = event['DESCRIPTION'] + '\n'
+                    event['DESCRIPTION'] = event['DESCRIPTION'] + location_url
 
             if json_blob.get('updated_at'):
-                event.last_modified = dateutil.parser.parse(json_blob.get('updated_at'))
-            cal.events.add(event)
+                event['LAST-MODIFIED'] = dateutil.parser.parse(json_blob.get('updated_at'))
+            cal.add_component(event)
 
-    return cal.serialize()
+    return cal.to_ical().decode('utf-8')
 
 def groupme_ics_error(error_text, static_name=None):
     print("Starting groupme_ics_error")  # Debug print
     cal = Calendar()
-    # Use ContentLine to add custom iCalendar properties
-    cal.extra.append(ContentLine(name="PRODID", value="-//Andrew Mussey//GroupMe-to-ICS 0.1//EN"))
-    cal.extra.append(ContentLine(name="VERSION", value="2.0"))
-    cal.extra.append(ContentLine(name="CALSCALE", value="GREGORIAN"))
-    cal.extra.append(ContentLine(name="METHOD", value="PUBLISH"))
-    cal.extra.append(ContentLine(name="X-WR-CALNAME", value=f"GroupMe: {current_app.groupme_calendar_name} ({error_text})"))
-    cal.extra.append(ContentLine(name="X-WR-TIMEZONE", value="America/Chicago"))
+    # Use dictionary-style assignment for iCalendar properties
+    cal['PRODID'] = '-//Andrew Mussey//GroupMe-to-ICS 0.1//EN'
+    cal['VERSION'] = '2.0'
+    cal['CALSCALE'] = 'GREGORIAN'
+    cal['METHOD'] = 'PUBLISH'
+    cal['X-WR-CALNAME'] = f"GroupMe: {current_app.groupme_calendar_name} ({error_text})"
+    cal['X-WR-TIMEZONE'] = 'America/Chicago'
 
-    return cal.serialize()
+    return cal.to_ical().decode('utf-8')
