@@ -2,10 +2,8 @@ from ics import Calendar, Event
 from flask import Response
 import dateutil.parser
 import requests
-import urlparse
-import urllib
+from urllib.parse import urlparse, urlunparse, urljoin, parse_qsl, urlencode
 from flask import current_app
-
 
 def return_ics_Response(response_body):
     return Response(
@@ -14,27 +12,26 @@ def return_ics_Response(response_body):
         headers={'Content-Disposition': 'attachment'}
     )
 
-
 def build_ics_urls(ics_url):
     google_calendar_url_base = 'http://www.google.com/calendar/render?cid='
 
     # Parse the URL into [scheme, netloc, path, params, query, fragment]
-    parsed_ics_url = list(urlparse.urlparse(ics_url))
+    parsed_ics_url = list(urlparse(ics_url))
     if parsed_ics_url[0] != 'https':
         parsed_ics_url[0] = 'http'
-    ics_url_http = urlparse.urlunparse(parsed_ics_url)
+    ics_url_http = urlunparse(parsed_ics_url)
 
     parsed_ics_url[0] = 'webcal'
-    ics_url_webcal = urlparse.urlunparse(parsed_ics_url)
+    ics_url_webcal = urlunparse(parsed_ics_url)
 
-    parsed_google_url = list(urlparse.urlparse(google_calendar_url_base))
-    parsed_google_url[4] = dict(urlparse.parse_qsl(parsed_google_url[4]))
+    parsed_google_url = list(urlparse(google_calendar_url_base))
+    parsed_google_url = list(urlparse(google_calendar_url_base))
+    parsed_google_url[4] = dict(parse_qsl(parsed_google_url[4]))
     parsed_google_url[4]['cid'] = ics_url_webcal
-    parsed_google_url[4] = urllib.urlencode(parsed_google_url[4])
-    ics_url_google = urlparse.urlunparse(parsed_google_url)
+    parsed_google_url[4] = urlencode(parsed_google_url[4])
+    ics_url_google = urlunparse(parsed_google_url)
 
     return ics_url_http, ics_url_webcal, ics_url_google
-
 
 def load_groupme_json(app, groupme_api_key, groupme_group_id):
     url_group_info = 'https://api.groupme.com/v3/groups/{groupme_group_id}'.format(groupme_group_id=groupme_group_id)
@@ -57,7 +54,6 @@ def load_groupme_json(app, groupme_api_key, groupme_group_id):
 
     current_app.groupme_load_successfully = True
     return True
-
 
 def groupme_json_to_ics(groupme_json, static_name=None):
     cal = Calendar()
@@ -109,7 +105,6 @@ def groupme_json_to_ics(groupme_json, static_name=None):
             cal.add_component(event)
 
     return cal.to_ical()
-
 
 def groupme_ics_error(error_text, static_name=None):
     cal = Calendar()
