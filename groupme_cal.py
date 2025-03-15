@@ -1,12 +1,20 @@
-from flask import Flask, current_app, render_template, request
-import os
-import datetime
-import pytz  # For timezone validation
+print("Starting to load groupme_cal.py")  # Debug print
 
-import utils
+try:
+    from flask import Flask, current_app, render_template, request
+    import os
+    import datetime
+    import pytz  # For timezone validation
+    import utils
+except Exception as e:
+    print(f"Import error in groupme_cal.py: {str(e)}")
+    raise
+
+print("Successfully loaded imports in groupme_cal.py")  # Debug print
 
 app = Flask(__name__)
 with app.app_context():
+    print("Initializing app context")  # Debug print
     # Validate timezone
     calendar_timezone = os.environ.get('GROUPME_CALENDAR_TIMEZONE', 'America/Chicago')
     try:
@@ -31,7 +39,7 @@ def index():
         groupme_group_id = os.environ.get('GROUPME_GROUP_ID', None)
         if not groupme_group_id:
             app.logger.error("GROUPME_GROUP_ID is not set.")
-            return 'ERROR: The GROUPME_GROUP_ID is not set.', 500  # Fixed: Removed extra quote
+            return 'ERROR: The GROUPME_GROUP_ID is not set.', 500
 
         if datetime.datetime.now() - last_cache > datetime.timedelta(minutes=cache_duration) or cache_duration == 0:
             app.logger.info('Cache miss.')
@@ -40,12 +48,12 @@ def index():
             groupme_api_key = os.environ.get('GROUPME_API_KEY', None)
             if not groupme_api_key:
                 app.logger.error("GROUPME_API_KEY is not set.")
-                return 'ERROR: The GROUPME_API_KEY is not set.', 500  # Fixed: Removed extra quote
+                return 'ERROR: The GROUPME_API_KEY is not set.', 500
 
             successfully_load_json = utils.load_groupme_json(app=app, groupme_api_key=groupme_api_key, groupme_group_id=groupme_group_id)
             if not successfully_load_json:
                 app.logger.error("Failed to load GroupMe JSON.")
-                return 'There was a critical error loading the GroupMe Calendar. Please investigate.', 500  # Fixed: Removed extra quote
+                return 'There was a critical error loading the GroupMe Calendar. Please investigate.', 500
             current_app.ics_cache = utils.groupme_json_to_ics(groupme_json=current_app.groupme_calendar_json_cache)
             current_app.last_cache = datetime.datetime.now()
         else:
