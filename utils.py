@@ -1,4 +1,4 @@
-from icalendar import Calendar, Event
+from ics import Calendar, Event
 from flask import Response
 import dateutil.parser
 import requests
