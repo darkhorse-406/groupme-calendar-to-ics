@@ -5,6 +5,8 @@ import requests
 from urllib.parse import urlparse, urlunparse, urljoin, parse_qsl, urlencode
 from flask import current_app
 
+print("Loaded imports in utils.py")  # Debug print
+
 def return_ics_Response(response_body):
     return Response(
         response_body,
@@ -13,6 +15,7 @@ def return_ics_Response(response_body):
     )
 
 def build_ics_urls(ics_url):
+    print("Starting build_ics_urls")  # Debug print
     google_calendar_url_base = 'http://www.google.com/calendar/render?cid='
 
     # Parse the URL into [scheme, netloc, path, params, query, fragment]
@@ -33,6 +36,7 @@ def build_ics_urls(ics_url):
     return ics_url_http, ics_url_webcal, ics_url_google
 
 def load_groupme_json(app, groupme_api_key, groupme_group_id):
+    print("Starting load_groupme_json")  # Debug print
     url_group_info = 'https://api.groupme.com/v3/groups/{groupme_group_id}'.format(groupme_group_id=groupme_group_id)
     url_calendar = 'https://api.groupme.com/v3/conversations/{groupme_group_id}/events/list'.format(groupme_group_id=groupme_group_id)
     headers = {'X-Access-Token': groupme_api_key}
@@ -55,6 +59,7 @@ def load_groupme_json(app, groupme_api_key, groupme_group_id):
     return True
 
 def groupme_json_to_ics(groupme_json, static_name=None):
+    print("Starting groupme_json_to_ics")  # Debug print
     cal = Calendar()
     # Use ContentLine to add custom iCalendar properties
     cal.extra.append(ContentLine(name="PRODID", value="-//Andrew Mussey//GroupMe-to-ICS 0.1//EN"))
@@ -107,6 +112,7 @@ def groupme_json_to_ics(groupme_json, static_name=None):
     return cal.serialize()
 
 def groupme_ics_error(error_text, static_name=None):
+    print("Starting groupme_ics_error")  # Debug print
     cal = Calendar()
     # Use ContentLine to add custom iCalendar properties
     cal.extra.append(ContentLine(name="PRODID", value="-//Andrew Mussey//GroupMe-to-ICS 0.1//EN"))
