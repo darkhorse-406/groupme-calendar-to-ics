@@ -1,1 +1,1 @@
-web: gunicorn groupme_cal:app --log-file=- --reload
+web: gunicorn --log-level debug groupme_cal:ap
