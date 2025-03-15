@@ -1,4 +1,4 @@
-from ics import Calendar, Event, Container, ContentLine
+from ics import Calendar, Event, ContentLine
 from flask import Response
 import dateutil.parser
 import requests
