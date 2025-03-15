@@ -12,7 +12,6 @@ with app.app_context():
         if os.environ.get('GROUPME_STATIC_NAME', None) != "":
             current_app.groupme_calendar_name = os.environ.get('GROUPME_STATIC_NAME', None)
 
-
 @app.route('/')
 def index():
     last_cache = getattr(current_app, 'last_cache', datetime.datetime(year=2000, month=1, day=1))
@@ -38,11 +37,13 @@ def index():
     else:
         print('Cache hit.  Time remaining: {}'.format(datetime.timedelta(minutes=cache_duration) - (datetime.datetime.now() - last_cache)))
 
+    # Use urllib.parse for URL parsing in Python 3
+    from urllib.parse import urlparse, urljoin
     ics_url = os.environ.get('GROUPME_PROXY_URL', None)
     if not ics_url:
-        ics_url = request.url + '/calendar.ics'
-        if request.url[-1] == '/':
-            ics_url = request.url + 'calendar.ics'
+        ics_url = urljoin(request.url, 'calendar.ics')
+        if request.url.endswith('/'):
+            ics_url = urljoin(request.url, 'calendar.ics')
 
     ics_url_http, ics_url_webcal, ics_url_google = utils.build_ics_urls(ics_url)
 
@@ -57,7 +58,6 @@ def index():
 
     # Return a template, but also some basic info about the latest cache time.
     return render_template('index.html', **params)
-
 
 @app.route('/calendar.ics')
 def full_ics():
@@ -87,16 +87,13 @@ def full_ics():
 
     return utils.return_ics_Response(getattr(current_app, 'ics_cache', None))
 
-
 @app.route('/recent.ics')
 def recent_ics():
     return 'Soon!'
 
-
 @app.route('/robots.txt')
 def robots():
     return 'User-agent: *\nDisallow: /'
-
 
 if __name__ == "__main__":
     app.run(debug=True)
