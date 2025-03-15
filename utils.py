@@ -1,11 +1,17 @@
-from ics import Calendar, Event, ContentLine
-from flask import Response
-import dateutil.parser
-import requests
-from urllib.parse import urlparse, urlunparse, urljoin, parse_qsl, urlencode
-from flask import current_app
+print("Starting to load utils.py")  # Debug print
 
-print("Loaded imports in utils.py")  # Debug print
+try:
+    from ics import Calendar, Event, ContentLine
+    from flask import Response
+    import dateutil.parser
+    import requests
+    from urllib.parse import urlparse, urlunparse, urljoin, parse_qsl, urlencode
+    from flask import current_app
+except Exception as e:
+    print(f"Import error in utils.py: {str(e)}")
+    raise
+
+print("Successfully loaded imports in utils.py")  # Debug print
 
 def return_ics_Response(response_body):
     return Response(
