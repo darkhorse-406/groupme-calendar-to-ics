@@ -1,1 +1,1 @@
-web: gunicorn --log-level debug groupme_cal:ap
+web: gunicorn --log-level debug groupme_cal:app
