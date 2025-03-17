@@ -1,1 +1,1 @@
-web: gunicorn --log-level debug groupme_cal:app
+web: gunicorn --log-level debug --bind 0.0.0.0:$PORT groupme_cal:app
